@@ -1,22 +1,25 @@
 import pygame
 import random
+import time
 
-# --- Setup ---
+#Setup
 pygame.init()
 screen = pygame.display.set_mode((800, 600))
 clock = pygame.time.Clock()
 running = True
+points = 0
+pygame.font.init()
 
-# --- Classes ---
+#Classes
 class Player:
     def __init__(self):
         self.pos = pygame.Vector2(400, 300)
-        self.color = "red"
+        self.color = "green"
         self.radius = 30
         self.hp = 100
         self.dmg = 25
         self.attacking = False
-    #keybinds
+
     def move(self, dt):
         keys = pygame.key.get_pressed()
         if keys[pygame.K_w]:
@@ -34,13 +37,14 @@ class Player:
     def draw(self, surface):
         pygame.draw.circle(surface, self.color, self.pos, self.radius)
 
+
 class Enemy:
     def __init__(self):
         self.pos = pygame.Vector2(random.randint(100, 700), random.randint(100, 500))
-        self.color = "green"
-        self.radius = 25
+        self.color = "red"
+        self.radius = 35
         self.hp = 50
-        self.speed = 100
+        self.speed = 150
         self.attacking = False
 
     def move(self, player_pos, dt):
@@ -51,44 +55,58 @@ class Enemy:
     def draw(self, surface):
         pygame.draw.circle(surface, self.color, self.pos, self.radius)
 
-# --- game setup ---
+
+#game setup
 player = Player()
 enemy = Enemy()
 font = pygame.font.SysFont(None, 30)
 
-# --- game loop ---
+#game loop
 while running:
     dt = clock.tick(60) / 1000
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.MOUSEBUTTONDOWN:
-            player.attack()
+            # Check if player clicked enemy
+            mouse_pos = pygame.Vector2(pygame.mouse.get_pos())
+            if (mouse_pos - enemy.pos).length() < enemy.radius:
+                enemy.hp -= player.dmg
+                print("Enemy hit!")
 
-    # --- update logic ---
+    #update logic
     player.move(dt)
     enemy.move(player.pos, dt)
 
-    # check collisions
-    if player.attacking and player.pos.distance_to(enemy.pos) < player.radius + enemy.radius:
-        enemy.hp -= player.dmg
-        player.attacking = False
-    if enemy.hp <= 0:
-        enemy = Enemy()  # new enemy appears
+    #Enemy touches player
+    if (enemy.pos - player.pos).length() < (enemy.radius + player.radius):
+        player.hp -= 1  # slowly lose health
+        if player.hp <= 0:
+            print("Alas, a villainous knave hath struck me down!")
+            time.sleep(2)
+            running = False
 
-    # --- Draw game ---
+    #Enemy defeated
+    if enemy.hp <= 0:
+        print("Enemy defeated!")
+        enemy = Enemy()
+        points += 1
+
+    #Draw game
     screen.fill("purple")
     player.draw(screen)
     enemy.draw(screen)
 
-    # UI
+    #UI
     text = font.render(f"Player HP: {player.hp} | Enemy HP: {enemy.hp}", True, "white")
     screen.blit(text, (20, 20))
 
-    controls = font.render("WASD = Move | Left Click = Attack", True, "white")
+    controls = font.render("WASD = Move | Left Click Enemy = Attack", True, "white")
     screen.blit(controls, (20, 50))
+
+    points_text = font.render(f"Points: {points}", True, "white")
+    screen.blit(points_text, (20, 80))
 
     pygame.display.flip()
 
 pygame.quit()
-#aaadd
