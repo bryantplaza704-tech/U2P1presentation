@@ -16,7 +16,7 @@ class Player:
         self.hp = 100
         self.dmg = 25
         self.attacking = False
-
+    #keybinds
     def move(self, dt):
         keys = pygame.key.get_pressed()
         if keys[pygame.K_w]:
@@ -51,12 +51,12 @@ class Enemy:
     def draw(self, surface):
         pygame.draw.circle(surface, self.color, self.pos, self.radius)
 
-# --- Game Setup ---
+# --- game setup ---
 player = Player()
 enemy = Enemy()
 font = pygame.font.SysFont(None, 30)
 
-# --- Game Loop ---
+# --- game loop ---
 while running:
     dt = clock.tick(60) / 1000
     for event in pygame.event.get():
@@ -65,18 +65,18 @@ while running:
         if event.type == pygame.MOUSEBUTTONDOWN:
             player.attack()
 
-    # --- Update Logic ---
+    # --- update logic ---
     player.move(dt)
     enemy.move(player.pos, dt)
 
-    # Check collisions
+    # check collisions
     if player.attacking and player.pos.distance_to(enemy.pos) < player.radius + enemy.radius:
         enemy.hp -= player.dmg
         player.attacking = False
     if enemy.hp <= 0:
         enemy = Enemy()  # new enemy appears
 
-    # --- Draw Everything ---
+    # --- Draw game ---
     screen.fill("purple")
     player.draw(screen)
     enemy.draw(screen)
@@ -84,6 +84,9 @@ while running:
     # UI
     text = font.render(f"Player HP: {player.hp} | Enemy HP: {enemy.hp}", True, "white")
     screen.blit(text, (20, 20))
+
+    controls = font.render("WASD = Move | Left Click = Attack", True, "white")
+    screen.blit(controls, (20, 50))
 
     pygame.display.flip()
 
