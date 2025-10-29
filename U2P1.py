@@ -1,43 +1,90 @@
-# Example file showing a circle moving on screen
 import pygame
+import random
 
-# pygame setup
+# --- Setup ---
 pygame.init()
-screen = pygame.display.set_mode((1280, 720))
+screen = pygame.display.set_mode((800, 600))
 clock = pygame.time.Clock()
 running = True
-dt = 0
 
-player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
+# --- Classes ---
+class Player:
+    def __init__(self):
+        self.pos = pygame.Vector2(400, 300)
+        self.color = "red"
+        self.radius = 30
+        self.hp = 100
+        self.dmg = 25
+        self.attacking = False
 
+    def move(self, dt):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_w]:
+            self.pos.y -= 250 * dt
+        if keys[pygame.K_s]:
+            self.pos.y += 250 * dt
+        if keys[pygame.K_a]:
+            self.pos.x -= 250 * dt
+        if keys[pygame.K_d]:
+            self.pos.x += 250 * dt
+
+    def attack(self):
+        self.attacking = True
+
+    def draw(self, surface):
+        pygame.draw.circle(surface, self.color, self.pos, self.radius)
+
+class Enemy:
+    def __init__(self):
+        self.pos = pygame.Vector2(random.randint(100, 700), random.randint(100, 500))
+        self.color = "green"
+        self.radius = 25
+        self.hp = 50
+        self.speed = 100
+        self.attacking = False
+
+    def move(self, player_pos, dt):
+        direction = (player_pos - self.pos)
+        if direction.length() > 0:
+            self.pos += direction.normalize() * self.speed * dt
+
+    def draw(self, surface):
+        pygame.draw.circle(surface, self.color, self.pos, self.radius)
+
+# --- Game Setup ---
+player = Player()
+enemy = Enemy()
+font = pygame.font.SysFont(None, 30)
+
+# --- Game Loop ---
 while running:
-    # poll for events
-    # pygame.QUIT event means the user clicked X to close your window
+    dt = clock.tick(60) / 1000
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            player.attack()
 
-    # fill the screen with a color to wipe away anything from last frame
+    # --- Update Logic ---
+    player.move(dt)
+    enemy.move(player.pos, dt)
+
+    # Check collisions
+    if player.attacking and player.pos.distance_to(enemy.pos) < player.radius + enemy.radius:
+        enemy.hp -= player.dmg
+        player.attacking = False
+    if enemy.hp <= 0:
+        enemy = Enemy()  # new enemy appears
+
+    # --- Draw Everything ---
     screen.fill("purple")
+    player.draw(screen)
+    enemy.draw(screen)
 
-    pygame.draw.circle(screen, "red", player_pos, 40)
+    # UI
+    text = font.render(f"Player HP: {player.hp} | Enemy HP: {enemy.hp}", True, "white")
+    screen.blit(text, (20, 20))
 
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_w]:
-        player_pos.y -= 300 * dt
-    if keys[pygame.K_s]:
-        player_pos.y += 300 * dt
-    if keys[pygame.K_a]:
-        player_pos.x -= 300 * dt
-    if keys[pygame.K_d]:
-        player_pos.x += 300 * dt
-
-    # flip() the display to put your work on screen
     pygame.display.flip()
-
-    # limits FPS to 60
-    # dt is delta time in seconds since last frame, used for framerate-
-    # independent physics.
-    dt = clock.tick(60) / 1000
 
 pygame.quit()
